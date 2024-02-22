@@ -118,7 +118,9 @@ app.delete("/api/cohorts/:cohortId", (req, res) => {
 });
 
 app.get("/api/students", cors(), (req, res) => {
-  Student.find({})
+  populate(("cohort"))
+  Student.find()
+  .populate("cohort")
     .then((students) => {
       console.log("Retrieved students ->", students);
       console.log("Number of students ->", students.length);
@@ -136,6 +138,7 @@ app.get("/api/students/cohort/:cohortId", cors(), (req, res) => {
     return res.status(400).json({ error: "Invalid cohort ID format" });
   }
   Student.find({ cohort: cohortId })
+  .populate("cohort")
     .then((students) => {
       console.log("Retrieved students for cohort ->", students);
       console.log("Number of students ->", students.length);
@@ -155,6 +158,7 @@ app.get("/api/students/:studentId", cors(), (req, res) => {
   }
 
   Student.findById(studentId)
+  .populate("cohort")
     .then((student) => {
       if (!student) {
         return res.status(404).json({ error: "Student not found" });
@@ -170,19 +174,7 @@ app.get("/api/students/:studentId", cors(), (req, res) => {
 });
 
 app.post("/api/students", (req, res) => {
-  Student.create({
-    firstName: req.body.firstName,
-    lastName: req.body.lastName,
-    email: req.body.email,
-    phone: req.body.phone,
-    linkedinUrl: req.body.linkedinUrl,
-    languages: req.body.languages,
-    program: req.body.program,
-    background: req.body.background,
-    image: req.body.image,
-    cohort: { type: mongoose.Schema.Types.ObjectId, ref: "Cohort" },
-    projects: [{ type: Array }],
-  })
+  Student.create(req.body);
     .then((student) => {
       console.log("New student created ->", student);
       res.json(student);
