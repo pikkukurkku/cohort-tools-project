@@ -9,6 +9,11 @@ const Cohort = require("./models/Cohort.model");
 const ObjectId = mongoose.Types.ObjectId;
 require("dotenv").config();
 const app = express();
+const { isAuthenticated } = require("./middleware/jwt.middleware");
+const {
+  errorHandler,
+  notFoundHandler,
+} = require("./middleware/error-handling");
 
 app.use(cors({ origin: ["http://localhost:5173", "http://localhost:5005"] }));
 app.use(express.json());
@@ -109,7 +114,7 @@ app.delete("/api/cohorts/:cohortId", (req, res) => {
   Cohort.findByIdAndDelete(cohortId)
     .then(() => {
       console.log("Cohort deleted!");
-      res.status(204).send(); // Send back only status code 204 indicating that resource is deleted
+      res.status(204).send();
     })
     .catch((error) => {
       console.error("Error while deleting the cohort ->", error);
@@ -118,9 +123,9 @@ app.delete("/api/cohorts/:cohortId", (req, res) => {
 });
 
 app.get("/api/students", cors(), (req, res) => {
-  populate(("cohort"))
+  populate("cohort");
   Student.find()
-  .populate("cohort")
+    .populate("cohort")
     .then((students) => {
       console.log("Retrieved students ->", students);
       console.log("Number of students ->", students.length);
@@ -138,7 +143,7 @@ app.get("/api/students/cohort/:cohortId", cors(), (req, res) => {
     return res.status(400).json({ error: "Invalid cohort ID format" });
   }
   Student.find({ cohort: cohortId })
-  .populate("cohort")
+    .populate("cohort")
     .then((students) => {
       console.log("Retrieved students for cohort ->", students);
       console.log("Number of students ->", students.length);
@@ -158,7 +163,7 @@ app.get("/api/students/:studentId", cors(), (req, res) => {
   }
 
   Student.findById(studentId)
-  .populate("cohort")
+    .populate("cohort")
     .then((student) => {
       if (!student) {
         return res.status(404).json({ error: "Student not found" });
@@ -174,7 +179,7 @@ app.get("/api/students/:studentId", cors(), (req, res) => {
 });
 
 app.post("/api/students", (req, res) => {
-  Student.create(req.body);
+  Student.create(req.body)
     .then((student) => {
       console.log("New student created ->", student);
       res.json(student);
@@ -205,13 +210,25 @@ app.delete("/api/students/:studentId", (req, res) => {
   Student.findByIdAndDelete(studentId)
     .then(() => {
       console.log("Student deleted!");
-      res.status(204).send(); // Send back only status code 204 indicating that resource is deleted
+      res.status(204).send();
     })
     .catch((error) => {
       console.error("Error while deleting the student ->", error);
       res.status(500).send({ error: "Deleting student failed" });
     });
 });
+
+// const projectRouter = require("./routes/project.routes");
+// app.use("/api", isAuthenticated, projectRouter);            // <== UPDATE
+ 
+// const taskRouter = require("./routes/task.routes");
+// app.use("/api", isAuthenticated, taskRouter);            // <== UPDATE
+ 
+const authRouter = require("./routes/auth.routes");
+app.use("/auth", isAuthenticated, authRouter);  
+
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
