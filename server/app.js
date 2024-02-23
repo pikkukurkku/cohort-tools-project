@@ -218,14 +218,30 @@ app.delete("/api/students/:studentId", (req, res) => {
     });
 });
 
-// const projectRouter = require("./routes/project.routes");
-// app.use("/api", isAuthenticated, projectRouter);            // <== UPDATE
- 
-// const taskRouter = require("./routes/task.routes");
-// app.use("/api", isAuthenticated, taskRouter);            // <== UPDATE
- 
 const authRouter = require("./routes/auth.routes");
-app.use("/auth", isAuthenticated, authRouter);  
+app.use("/auth", authRouter);
+
+app.get("/api/users/:userId", isAuthenticated, (req, res) => {
+  const userId = req.params.userId;
+
+  if (!ObjectId.isValid(userId)) {
+    return res.status(400).json({ error: "Invalid user ID format" });
+  }
+
+  User.findById(userId)
+    .then((user) => {
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      console.log("Retrieved user by ID ->", user);
+      res.json(user);
+    })
+    .catch((error) => {
+      console.error("Error while retrieving user by ID ->", error);
+      res.status(500).send({ error: "Failed to retrieve user by ID" });
+    });
+});
 
 app.use(notFoundHandler);
 app.use(errorHandler);
